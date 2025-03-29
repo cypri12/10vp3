@@ -1,11 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Mini Minecraft JS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simplex-noise@2.4.0/simplex-noise.min.js"></script>
+    <script src="https://threejs.org/examples/js/controls/PointerLockControls.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: black; }
+        #info { position: absolute; top: 10px; left: 10px; color: white; font-family: Arial; }
+    </style>
 </head>
 <body>
-    
+    <div id="info">Clique pour entrer en mode FPS</div>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 10, 10);
+        scene.add(light);
+
+        const textureLoader = new THREE.TextureLoader();
+        const textures = {
+            grass: textureLoader.load('https://raw.githubusercontent.com/TON-UTILISATEUR/TON-REPO/main/assets/grass_block.png'),
+            dirt: textureLoader.load('https://raw.githubusercontent.com/TON-UTILISATEUR/TON-REPO/main/assets/dirt_block.png'),
+            water: textureLoader.load('https://raw.githubusercontent.com/TON-UTILISATEUR/TON-REPO/main/assets/eau.jpg'),
+        };
+
+        const chunkSize = 5, tileSize = 1, heightRange = [1, 4], waterLevel = 2;
+        const noise = new SimplexNoise();
+
+        function createVoxel(x, y, z, texture) {
+            const geometry = new THREE.BoxGeometry(tileSize, tileSize, tileSize);
+            const material = new THREE.MeshStandardMaterial({ map: texture });
+            const cube = new THREE.Mesh(geometry, material);
+            cube.position.set(x, y, z);
+            scene.add(cube);
+        }
+
+        function generateChunk(xOffset, zOffset) {
+            for (let i = 0; i < chunkSize; i++) {
+                for (let j = 0; j < chunkSize; j++) {
+                    const noiseValue = noise.noise2D((i + xOffset) * 0.1, (j + zOffset) * 0.1);
+                    let height = Math.floor((noiseValue + 1) * (heightRange[1] - heightRange[0]) / 2 + heightRange[0]);
+
+                    for (let h = 0; h <= height; h++) {
+                        let texture = h === height ? textures.grass : textures.dirt;
+                        createVoxel(i + xOffset, h, j + zOffset, texture);
+                    }
+
+                    if (height < waterLevel) {
+                        createVoxel(i + xOffset, waterLevel, j + zOffset, textures.water);
+                    }
+                }
+            }
+        }
+
+        generateChunk(0, 0);
+        generateChunk(5, 0);
+        generateChunk(0, 5);
+        generateChunk(5, 5);
+
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        document.addEventListener('click', () => controls.lock());
+
+        camera.position.set(2, 3, 2);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
 </body>
 </html>

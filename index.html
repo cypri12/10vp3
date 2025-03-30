@@ -3,24 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terrain 3D - Three.js</title>
+    <title>Mini Minecraft en Three.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
-        #startButton {
+        #instructions {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 10px 20px;
             font-size: 20px;
-            cursor: pointer;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <button id="startButton">Clique pour passer en mode FPS</button>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="script.js"></script>
+
+    <div id="instructions">Clique pour entrer en mode FPS</div>
+
+    <script type="module">
+        import { PointerLockControls } from 'https://threejs.org/examples/jsm/controls/PointerLockControls.js';
+
+        // Initialisation de la scène
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Lumière
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(10, 10, 10).normalize();
+        scene.add(light);
+
+        // Sol : Blocs de "dirt" (terre)
+        const blockSize = 1;
+        const terrainSize = 10;  // Taille du terrain (10x10)
+        const dirtColor = 0x8B4513; // Marron
+
+        const geometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+        const material = new THREE.MeshStandardMaterial({ color: dirtColor });
+
+        for (let x = -terrainSize / 2; x < terrainSize / 2; x++) {
+            for (let z = -terrainSize / 2; z < terrainSize / 2; z++) {
+                const block = new THREE.Mesh(geometry, material);
+                block.position.set(x * blockSize, -blockSize, z * blockSize);
+                scene.add(block);
+            }
+        }
+
+        // Contrôles FPS (souris + clavier)
+        const controls = new PointerLockControls(camera, document.body);
+        document.body.addEventListener('click', () => {
+            controls.lock();
+            document.getElementById('instructions').style.display = 'none';
+        });
+
+        camera.position.y = 1.5;  // Hauteur du joueur
+
+        // Déplacement du joueur
+        const speed = 0.1;
+        const keys = { w: false, a: false, s: false, d: false };
+
+        document.addEventListener('keydown', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = true; });
+        document.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+
+        function movePlayer() {
+            if (keys.w) controls.moveForward(speed);
+            if (keys.s) controls.moveForward(-speed);
+            if (keys.a) controls.moveRight(-speed);
+            if (keys.d) controls.moveRight(speed);
+        }
+
+        // Animation
+        function animate() {
+            requestAnimationFrame(animate);
+            movePlayer();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Ajustement de la taille de l'écran
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
 </body>
 </html>

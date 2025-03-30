@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mini Minecraft en Three.js</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/examples/js/controls/PointerLockControls.js"></script>
     <style>
         body { margin: 0; overflow: hidden; }
         #instructions {
@@ -24,9 +25,7 @@
 
     <div id="instructions">Clique pour entrer en mode FPS</div>
 
-    <script type="module">
-        import { PointerLockControls } from 'https://threejs.org/examples/jsm/controls/PointerLockControls.js';
-
+    <script>
         // Initialisation de la scène
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -56,7 +55,7 @@
         }
 
         // Contrôles FPS (souris + clavier)
-        const controls = new PointerLockControls(camera, document.body);
+        const controls = new THREE.PointerLockControls(camera, document.body);
         document.body.addEventListener('click', () => {
             controls.lock();
             document.getElementById('instructions').style.display = 'none';

@@ -9,7 +9,7 @@ document.body.appendChild(renderer.domElement);
 const light = new THREE.AmbientLight(0xffffff, 1);
 scene.add(light);
 
-// Contrôles FPS
+// Gestion des contrôles FPS
 const controls = new THREE.PointerLockControls(camera, document.body);
 document.getElementById("startButton").addEventListener("click", () => {
     controls.lock();
@@ -27,13 +27,13 @@ document.addEventListener("keyup", () => {
     player.velocity.set(0, 0, 0);
 });
 
-// Génération du sol
+// Génération du sol avec des couleurs
 const taille = 10; // Taille du terrain
 const geometrieBloc = new THREE.BoxGeometry(1, 1, 1);
 
 for (let x = -taille / 2; x < taille / 2; x++) {
     for (let z = -taille / 2; z < taille / 2; z++) {
-        const couleur = new THREE.Color(Math.random(), Math.random(), Math.random()); // Couleurs aléatoires
+        const couleur = new THREE.Color(0.5 + Math.random() * 0.5, 0.3, 0.1); // Tons de marron pour la terre
         const materiauBloc = new THREE.MeshStandardMaterial({ color: couleur });
         const bloc = new THREE.Mesh(geometrieBloc, materiauBloc);
         bloc.position.set(x, -1, z);

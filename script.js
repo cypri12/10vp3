@@ -1,104 +1,71 @@
 // Initialisation de la scène
 const scene = new THREE.Scene();
+
+// Ajout de la lumière
+const light = new THREE.AmbientLight(0xffffff, 1);
+scene.add(light);
+
+// Initialisation de la caméra
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 2, 5);
+
+// Initialisation du rendu
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Chargement de la texture dirt_block
-const loader = new THREE.TextureLoader();
-const dirtTexture = loader.load('dirt_block.png');
-dirtTexture.wrapS = dirtTexture.wrapT = THREE.RepeatWrapping;
-dirtTexture.repeat.set(10, 10); // Répète la texture pour éviter les pixels étirés
+// Création du sol avec des blocs de différentes couleurs
+const size = 10; // Taille du terrain (10x10 blocs)
+const tileSize = 1; // Taille de chaque bloc
 
-// Création du sol
-const terrainGeometry = new THREE.PlaneGeometry(50, 50);
-const terrainMaterial = new THREE.MeshBasicMaterial({ map: dirtTexture, side: THREE.DoubleSide });
-const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
-terrain.rotation.x = -Math.PI / 2; // Mettre le sol à plat
-scene.add(terrain);
+const colors = {
+    grass: 0x00ff00,  // Vert
+    dirt: 0x8B4513,   // Marron
+    stone: 0x808080,  // Gris
+};
 
-// Contrôle FPS
-const controls = new THREE.PointerLockControls(camera, document.body);
-document.getElementById("startButton").addEventListener("click", function () {
-    controls.lock();
-    document.getElementById("startButton").style.display = "none";
-});
-scene.add(controls.getObject());
+// Génération du terrain
+for (let x = -size / 2; x < size / 2; x++) {
+    for (let z = -size / 2; z < size / 2; z++) {
+        // Déterminer la couleur du bloc
+        let color = colors.dirt;
+        if (Math.random() < 0.1) color = colors.stone; // 10% de blocs gris
+        if (Math.random() < 0.05) color = colors.grass; // 5% de blocs verts
 
-// Déplacement avec ZQSD / WASD
-const movementSpeed = 0.2;
-const keys = { forward: false, backward: false, left: false, right: false };
-
-document.addEventListener("keydown", (event) => {
-    switch (event.code) {
-        case "KeyW":
-        case "ArrowUp":
-            keys.forward = true;
-            break;
-        case "KeyS":
-        case "ArrowDown":
-            keys.backward = true;
-            break;
-        case "KeyA":
-        case "ArrowLeft":
-            keys.left = true;
-            break;
-        case "KeyD":
-        case "ArrowRight":
-            keys.right = true;
-            break;
+        const geometry = new THREE.BoxGeometry(tileSize, tileSize, tileSize);
+        const material = new THREE.MeshStandardMaterial({ color: color });
+        const block = new THREE.Mesh(geometry, material);
+        block.position.set(x * tileSize, 0, z * tileSize);
+        scene.add(block);
     }
-});
-
-document.addEventListener("keyup", (event) => {
-    switch (event.code) {
-        case "KeyW":
-        case "ArrowUp":
-            keys.forward = false;
-            break;
-        case "KeyS":
-        case "ArrowDown":
-            keys.backward = false;
-            break;
-        case "KeyA":
-        case "ArrowLeft":
-            keys.left = false;
-            break;
-        case "KeyD":
-        case "ArrowRight":
-            keys.right = false;
-            break;
-    }
-});
-
-// Mise à jour de la position du joueur
-function updateMovement() {
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-    direction.y = 0; // Empêche de bouger en hauteur
-    direction.normalize();
-
-    if (keys.forward) controls.getObject().position.addScaledVector(direction, movementSpeed);
-    if (keys.backward) controls.getObject().position.addScaledVector(direction, -movementSpeed);
-
-    const right = new THREE.Vector3();
-    right.crossVectors(camera.up, direction).normalize();
-    if (keys.left) controls.getObject().position.addScaledVector(right, -movementSpeed);
-    if (keys.right) controls.getObject().position.addScaledVector(right, movementSpeed);
 }
 
-// Boucle d'animation
+// Contrôles clavier pour bouger la caméra
+const keys = { forward: false, backward: false, left: false, right: false };
+document.addEventListener("keydown", (event) => {
+    if (event.code === "ArrowUp" || event.code === "KeyW") keys.forward = true;
+    if (event.code === "ArrowDown" || event.code === "KeyS") keys.backward = true;
+    if (event.code === "ArrowLeft" || event.code === "KeyA") keys.left = true;
+    if (event.code === "ArrowRight" || event.code === "KeyD") keys.right = true;
+});
+document.addEventListener("keyup", (event) => {
+    if (event.code === "ArrowUp" || event.code === "KeyW") keys.forward = false;
+    if (event.code === "ArrowDown" || event.code === "KeyS") keys.backward = false;
+    if (event.code === "ArrowLeft" || event.code === "KeyA") keys.left = false;
+    if (event.code === "ArrowRight" || event.code === "KeyD") keys.right = false;
+});
+
+// Animation et mise à jour de la caméra
 function animate() {
     requestAnimationFrame(animate);
-    updateMovement();
+
+    // Déplacement de la caméra
+    const speed = 0.1;
+    if (keys.forward) camera.position.z -= speed;
+    if (keys.backward) camera.position.z += speed;
+    if (keys.left) camera.position.x -= speed;
+    if (keys.right) camera.position.x += speed;
+
     renderer.render(scene, camera);
 }
 animate();
-
-// Ajustement de la fenêtre
-window.addEventListener('resize', function () {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-});

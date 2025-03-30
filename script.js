@@ -1,71 +1,62 @@
 // Initialisation de la scène
 const scene = new THREE.Scene();
-
-// Ajout de la lumière
-const light = new THREE.AmbientLight(0xffffff, 1);
-scene.add(light);
-
-// Initialisation de la caméra
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 2, 5);
-
-// Initialisation du rendu
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Création du sol avec des blocs de différentes couleurs
-const size = 10; // Taille du terrain (10x10 blocs)
-const tileSize = 1; // Taille de chaque bloc
+// Lumière ambiante
+const light = new THREE.AmbientLight(0xffffff, 1);
+scene.add(light);
 
-const colors = {
-    grass: 0x00ff00,  // Vert
-    dirt: 0x8B4513,   // Marron
-    stone: 0x808080,  // Gris
-};
+// Contrôles FPS
+const controls = new THREE.PointerLockControls(camera, document.body);
+document.getElementById("startButton").addEventListener("click", () => {
+    controls.lock();
+});
 
-// Génération du terrain
-for (let x = -size / 2; x < size / 2; x++) {
-    for (let z = -size / 2; z < size / 2; z++) {
-        // Déterminer la couleur du bloc
-        let color = colors.dirt;
-        if (Math.random() < 0.1) color = colors.stone; // 10% de blocs gris
-        if (Math.random() < 0.05) color = colors.grass; // 5% de blocs verts
+// Déplacement du joueur
+const player = { velocity: new THREE.Vector3(), speed: 0.1 };
+document.addEventListener("keydown", (event) => {
+    if (event.code === "KeyW") player.velocity.z = -player.speed;
+    if (event.code === "KeyS") player.velocity.z = player.speed;
+    if (event.code === "KeyA") player.velocity.x = -player.speed;
+    if (event.code === "KeyD") player.velocity.x = player.speed;
+});
+document.addEventListener("keyup", () => {
+    player.velocity.set(0, 0, 0);
+});
 
-        const geometry = new THREE.BoxGeometry(tileSize, tileSize, tileSize);
-        const material = new THREE.MeshStandardMaterial({ color: color });
-        const block = new THREE.Mesh(geometry, material);
-        block.position.set(x * tileSize, 0, z * tileSize);
-        scene.add(block);
+// Génération du sol
+const taille = 10; // Taille du terrain
+const geometrieBloc = new THREE.BoxGeometry(1, 1, 1);
+
+for (let x = -taille / 2; x < taille / 2; x++) {
+    for (let z = -taille / 2; z < taille / 2; z++) {
+        const couleur = new THREE.Color(Math.random(), Math.random(), Math.random()); // Couleurs aléatoires
+        const materiauBloc = new THREE.MeshStandardMaterial({ color: couleur });
+        const bloc = new THREE.Mesh(geometrieBloc, materiauBloc);
+        bloc.position.set(x, -1, z);
+        scene.add(bloc);
     }
 }
 
-// Contrôles clavier pour bouger la caméra
-const keys = { forward: false, backward: false, left: false, right: false };
-document.addEventListener("keydown", (event) => {
-    if (event.code === "ArrowUp" || event.code === "KeyW") keys.forward = true;
-    if (event.code === "ArrowDown" || event.code === "KeyS") keys.backward = true;
-    if (event.code === "ArrowLeft" || event.code === "KeyA") keys.left = true;
-    if (event.code === "ArrowRight" || event.code === "KeyD") keys.right = true;
-});
-document.addEventListener("keyup", (event) => {
-    if (event.code === "ArrowUp" || event.code === "KeyW") keys.forward = false;
-    if (event.code === "ArrowDown" || event.code === "KeyS") keys.backward = false;
-    if (event.code === "ArrowLeft" || event.code === "KeyA") keys.left = false;
-    if (event.code === "ArrowRight" || event.code === "KeyD") keys.right = false;
-});
+// Position de la caméra
+camera.position.set(0, 2, 5);
+scene.add(controls.getObject());
 
-// Animation et mise à jour de la caméra
+// Animation
 function animate() {
     requestAnimationFrame(animate);
-
-    // Déplacement de la caméra
-    const speed = 0.1;
-    if (keys.forward) camera.position.z -= speed;
-    if (keys.backward) camera.position.z += speed;
-    if (keys.left) camera.position.x -= speed;
-    if (keys.right) camera.position.x += speed;
-
+    controls.moveRight(player.velocity.x);
+    controls.moveForward(player.velocity.z);
     renderer.render(scene, camera);
 }
 animate();
+
+// Ajustement à la taille de l'écran
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
